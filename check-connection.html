@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>فحص الاتصال بقاعدة البيانات</title>
+<style>
+  body{font-family:sans-serif; background:#F6EFDD; padding:30px; direction:rtl; text-align:right;}
+  .box{background:#fff; border-radius:12px; padding:24px; max-width:640px; margin:0 auto; box-shadow:0 8px 20px rgba(0,0,0,.1);}
+  h1{font-size:1.3rem;}
+  .line{margin:14px 0; padding:12px; border-radius:8px; font-size:.95rem; white-space:pre-wrap; word-break:break-all;}
+  .ok{background:#e2f3e2; color:#1e5a1e;}
+  .err{background:#fbe2e2; color:#7a1e1e;}
+  .info{background:#eef1f7; color:#333;}
+  button{padding:10px 20px; border-radius:100px; border:none; background:#2E3524; color:#fff; font-weight:700; cursor:pointer; font-size:.95rem;}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>🔍 فحص الاتصال بقاعدة البيانات (JSONBin)</h1>
+  <p>هالصفحة بتختبر القراءة والكتابة بنفس القاعدة يلي الموقع بيستخدمها، وبتوريك أي خطأ بالعربي وبشكل واضح بدون ما تحتاج تفتح أدوات المطور.</p>
+  <button onclick="runTest()">ابدأ الفحص</button>
+  <div id="results"></div>
+</div>
+
+<script>
+const BIN_ID = '6a4aaeb6da38895dfe31de10';
+const MASTER_KEY = '$2a$10$VSx4ZS/VnoEafmwtXxbSe.S/pdsmmNg7hinKKiyAoAagVMNHjy.Xq';
+const BASE = 'https://api.jsonbin.io/v3/b/';
+
+function addLine(type, text){
+  const el = document.createElement('div');
+  el.className = 'line ' + type;
+  el.textContent = text;
+  document.getElementById('results').appendChild(el);
+}
+
+async function runTest(){
+  document.getElementById('results').innerHTML = '';
+  addLine('info', 'جاري اختبار القراءة (GET) من القاعدة...');
+
+  try{
+    const res = await fetch(BASE + BIN_ID + '/latest', {
+      headers: { 'X-Master-Key': MASTER_KEY }
+    });
+    const bodyText = await res.text();
+    if(res.ok){
+      addLine('ok', '✔ نجحت القراءة (Status ' + res.status + ')\n' + bodyText.slice(0,500));
+    } else {
+      addLine('err', '✘ فشلت القراءة — Status: ' + res.status + ' ' + res.statusText + '\nرسالة السيرفر: ' + bodyText.slice(0,500));
+    }
+  }catch(e){
+    addLine('err', '✘ فشل الاتصال بالكامل أثناء القراءة (مشكلة شبكة/CORS): ' + e.message);
+  }
+
+  addLine('info', 'جاري اختبار الكتابة (PUT) على القاعدة (بدون حذف بياناتك الحالية)...');
+  try{
+    // نقرأ البيانات الحالية أول شي عشان الاختبار ما يمسح ولا يبدّل أي شي حقيقي
+    let currentData = {};
+    try{
+      const cur = await fetch(BASE + BIN_ID + '/latest', { headers: { 'X-Master-Key': MASTER_KEY } });
+      if(cur.ok){ const curJson = await cur.json(); currentData = curJson.record || {}; }
+    }catch(e){}
+
+    const testPayload = Object.assign({}, currentData, { _connectionTestAt: new Date().toISOString() });
+
+    const res2 = await fetch(BASE + BIN_ID, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': MASTER_KEY,
+        'X-Bin-Versioning': 'false'
+      },
+      body: JSON.stringify(testPayload)
+    });
+    const bodyText2 = await res2.text();
+    if(res2.ok){
+      addLine('ok', '✔ نجحت الكتابة (Status ' + res2.status + ') — بياناتك الحالية ضلت متل ما هي.');
+    } else {
+      addLine('err', '✘ فشلت الكتابة — Status: ' + res2.status + ' ' + res2.statusText + '\nرسالة السيرفر: ' + bodyText2.slice(0,500));
+    }
+  }catch(e){
+    addLine('err', '✘ فشل الاتصال بالكامل أثناء الكتابة (مشكلة شبكة/CORS): ' + e.message);
+  }
+}
+</script>
+</body>
+</html>

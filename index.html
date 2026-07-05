@@ -722,21 +722,23 @@
   function renderMenu(){
     const products = nzGetProducts().filter(p => !p.hidden);
 
-    // تجميع حسب التصنيف مع الحفاظ على أول ترتيب ظهور
+    // تجميع حسب اسم التصنيف الظاهر (وليس المعرّف الداخلي)، حتى لو المنتجات
+    // الأساسية والمضافة عندها معرّفات داخلية مختلفة لنفس التصنيف
     const catsOrder = [];
     const catsMap = {};
     products.forEach(p => {
-      if(!catsMap[p.category]){
-        catsMap[p.category] = { name: p.categoryName || p.category, items: [] };
-        catsOrder.push(p.category);
+      const key = String(p.categoryName || p.category || 'أخرى').trim();
+      if(!catsMap[key]){
+        catsMap[key] = { name: key, items: [] };
+        catsOrder.push(key);
       }
-      catsMap[p.category].items.push(p);
+      catsMap[key].items.push(p);
     });
 
     // تبويبات التصنيفات
     const tabsEl = document.getElementById('nz-cat-tabs');
-    tabsEl.innerHTML = catsOrder.map((catId, i) =>
-      `<button class="cat-tab${i===0?' active':''}" data-target="blk-${catId}">${escapeHtml(catsMap[catId].name)}</button>`
+    tabsEl.innerHTML = catsOrder.map((catName, i) =>
+      `<button class="cat-tab${i===0?' active':''}" data-target="blk-${i}">${escapeHtml(catsMap[catName].name)}</button>`
     ).join('');
 
     // كتل المنتجات
@@ -745,8 +747,8 @@
       contentEl.innerHTML = '<p style="text-align:center;color:#8a6d3b;">ما في منتجات لعرضها حاليًا.</p>';
       return;
     }
-    contentEl.innerHTML = catsOrder.map(catId => {
-      const cat = catsMap[catId];
+    contentEl.innerHTML = catsOrder.map((catName, i) => {
+      const cat = catsMap[catName];
       const cards = cat.items.map(p => `
         <article class="card">
           <div class="card-img">
@@ -757,7 +759,7 @@
         </article>
       `).join('');
       return `
-        <div class="category-block" id="blk-${catId}">
+        <div class="category-block" id="blk-${i}">
           <div class="category-title"><h3>${escapeHtml(cat.name)}</h3><div class="rule"></div></div>
           <div class="grid">${cards}</div>
         </div>

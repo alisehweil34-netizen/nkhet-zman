@@ -115,18 +115,6 @@
   }
   .color-row input[type=text]{flex:1;}
 
-  .swatch-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
-  .swatch{
-    width:36px; height:36px; border-radius:50%; border:2px solid var(--line);
-    cursor:pointer; transition:.15s; position:relative; flex-shrink:0; padding:0;
-  }
-  .swatch:hover{transform:scale(1.1);}
-  .swatch.selected{border-color:var(--ink); box-shadow:0 0 0 2px var(--milk), 0 0 0 4px var(--ink);}
-  .swatch.selected:after{
-    content:"✔"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    color:#fff; font-size:.85rem; font-weight:900; text-shadow:0 0 3px rgba(0,0,0,.7);
-  }
-
   .btn{
     display:inline-flex; align-items:center; gap:8px;
     padding:12px 24px; border-radius:100px; font-size:.95rem; font-weight:700;
@@ -239,6 +227,25 @@
   body.nz-font-small{font-size:14px;}
   body.nz-font-medium{font-size:16px;}
   body.nz-font-large{font-size:19px;}
+
+  /* ---------- التباين العالي ---------- */
+  body.nz-high-contrast{background:#fff; color:#000;}
+  body.nz-high-contrast header{background:#fff; border-bottom:2px solid #000;}
+  body.nz-high-contrast h1, body.nz-high-contrast h2, body.nz-high-contrast h3, body.nz-high-contrast .brand-name{color:#000;}
+  body.nz-high-contrast .card-box, body.nz-high-contrast .tabs{background:#fff; border:2px solid #000; box-shadow:none;}
+  body.nz-high-contrast .card-box .sub, body.nz-high-contrast .pref-info span, body.nz-high-contrast .hint, body.nz-high-contrast .page-head p{color:#000;}
+  body.nz-high-contrast .tab-btn{color:#000; border:1px solid transparent;}
+  body.nz-high-contrast .tab-btn.active{background:#000; color:#fff;}
+  body.nz-high-contrast .field input, body.nz-high-contrast .field textarea, body.nz-high-contrast .field select, body.nz-high-contrast table input, body.nz-high-contrast table select, body.nz-high-contrast .search-box, body.nz-high-contrast .cat-filter{
+    background:#fff; color:#000; border:2px solid #000;
+  }
+  body.nz-high-contrast .btn-primary{background:#000; color:#fff; border-color:#000;}
+  body.nz-high-contrast .btn-ghost{background:#fff; color:#000; border-color:#000;}
+  body.nz-high-contrast .back-link{border-color:#000; color:#000;}
+  body.nz-high-contrast thead th{color:#000; border-bottom:2px solid #000;}
+  body.nz-high-contrast tbody td{border-bottom:1px solid #000;}
+  body.nz-high-contrast .icon-btn{background:#fff; border:2px solid #000; color:#000;}
+  body.nz-high-contrast .line, body.nz-high-contrast .rule{background:#000 !important;}
 </style>
 </head>
 <body>
@@ -267,44 +274,8 @@
 
   <div class="content">
 
-    <!-- ============ تبويب: الإعدادات (ألوان + حجم خط + لغة) ============ -->
+    <!-- ============ تبويب: الإعدادات (تفضيلات العرض) ============ -->
     <div class="panel active" id="panel-prefs">
-      <div class="card-box">
-        <h2>ألوان الموقع</h2>
-        <p class="sub">غيّر هوية الألوان بالكامل — التغيير بينعكس فورًا على الموقع.</p>
-        <div class="field-grid">
-          <div class="field">
-            <label>خلفية كل صفحات الموقع</label>
-            <div class="swatch-row" id="swatches-colorCream"></div>
-            <input type="hidden" id="f-colorCream">
-          </div>
-          <div class="field">
-            <label>العناوين، الأزرار الرئيسية، والحدود</label>
-            <div class="swatch-row" id="swatches-colorOliveDark"></div>
-            <input type="hidden" id="f-colorOliveDark">
-          </div>
-          <div class="field">
-            <label>النصوص المميزة والزخارف والحدود الرفيعة</label>
-            <div class="swatch-row" id="swatches-colorBrass"></div>
-            <input type="hidden" id="f-colorBrass">
-          </div>
-          <div class="field">
-            <label>حدود الصور والتفاصيل الزخرفية الثانوية</label>
-            <div class="swatch-row" id="swatches-colorBrassLight"></div>
-            <input type="hidden" id="f-colorBrassLight">
-          </div>
-          <div class="field">
-            <label>الأسعار وحالة تمرير الفأرة على الأزرار</label>
-            <div class="swatch-row" id="swatches-colorBurgundy"></div>
-            <input type="hidden" id="f-colorBurgundy">
-          </div>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-primary" onclick="saveColors()">💾 حفظ الألوان</button>
-          <button class="btn btn-ghost" onclick="resetColors()">↺ استرجاع الألوان الافتراضية</button>
-        </div>
-      </div>
-
       <div class="card-box">
         <h2>تفضيلات العرض</h2>
         <p class="sub">هاي الإعدادات خاصة فيك وبتنحفظ على هالمتصفح بس.</p>
@@ -322,6 +293,17 @@
 
         <div class="pref-row">
           <div class="pref-info">
+            <b>التباين العالي</b>
+            <span>ألوان أوضح وأكثر تباينًا لسهولة القراءة</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="pref-contrast" onchange="savePrefsFromUI()">
+            <span class="slider-toggle"></span>
+          </label>
+        </div>
+
+        <div class="pref-row">
+          <div class="pref-info">
             <b>حجم الخط</b>
             <span>كبّر أو صغّر حجم النص بكل الموقع</span>
           </div>
@@ -331,7 +313,6 @@
             <button data-size="large" onclick="setFontSize('large')">كبير</button>
           </div>
         </div>
-
       </div>
     </div>
 
@@ -419,7 +400,7 @@
 </div>
 
 <footer class="settings-footer">
-  ⚠ كل الإعدادات هون محفوظة داخل متصفحك الحالي فقط (localStorage)، وما بتنعرض تلقائيًا لباقي الزوار إلا إذا الموقع مربوط بقاعدة بيانات حقيقية.
+  ✔ أي تعديل من هون (منتجات، أسعار...) ينحفظ مباشرة ويظهر لكل زوار الموقع تلقائيًا.
 </footer>
 
 <div class="toast" id="toast"></div>
@@ -445,100 +426,6 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-/* ---------------- نسخ احتياطي / نقل بين المتصفحات ---------------- */
-function exportBackupToFile(){
-  const json = nzExportBackup();
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const stamp = new Date().toISOString().slice(0,10);
-  a.href = url;
-  a.download = 'nz-backup-' + stamp + '.json';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-  showToast('تم تنزيل النسخة الاحتياطية ✔');
-}
-
-function importBackupFromFile(event){
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onerror = () => showToast('تعذرت قراءة الملف');
-  reader.onload = async () => {
-    try {
-      showToast('جاري الاستيراد...');
-      const ok = await nzImportBackup(reader.result);
-      showToast(ok ? 'تم استيراد الإعدادات للجميع ✔ ... جارِ إعادة التحميل' : 'تعذر الاتصال بالسحابة ❌');
-      if (ok) setTimeout(() => location.reload(), 900);
-    } catch (e) {
-      showToast('الملف غير صالح، تأكد إنه نفس ملف النسخة الاحتياطية');
-    }
-  };
-  reader.readAsText(file);
-  event.target.value = '';
-}
-
-/* ---------------- الألوان (باليتة ثابتة) ---------------- */
-const COLOR_FIELDS = ['colorCream','colorOliveDark','colorBrass','colorBrassLight','colorBurgundy'];
-
-const COLOR_PALETTES = {
-  colorCream:     ['#F6EFDD','#FFFDF8','#EAE3F2','#DCEAE3','#F5E1E3','#E8ECE0','#FBEFD9','#E4E8ED'],
-  colorOliveDark: ['#2E3524','#1F2937','#3B2A22','#2B2B2B','#3A1F2E','#1E3A34','#33241C','#242038'],
-  colorBrass:     ['#A9782F','#B5651D','#8A6D3B','#C1440E','#7C5A2B','#9E5B3C','#B8860B','#6B4226'],
-  colorBrassLight:['#C79A4B','#E0B978','#D8A0A0','#B7CBA8','#C9B7DB','#F0C987','#A9C6C1','#E3B98F'],
-  colorBurgundy:  ['#6E2430','#8E2C3B','#7A1F3D','#5B2333','#943126','#4A2E4F','#1F5C4A','#2C3E6E']
-};
-
-function renderSwatches(){
-  const s = nzLoadSiteSettings();
-  COLOR_FIELDS.forEach(key=>{
-    const wrap = document.getElementById('swatches-' + key);
-    const hidden = document.getElementById('f-' + key);
-    if(!wrap || !hidden) return;
-    const current = (s[key] || '').toLowerCase();
-    hidden.value = s[key];
-    wrap.innerHTML = COLOR_PALETTES[key].map(hex => `
-      <button type="button" class="swatch${hex.toLowerCase() === current ? ' selected' : ''}"
-        style="background:${hex};" data-key="${key}" data-hex="${hex}"
-        title="${hex}" onclick="selectColorSwatch('${key}','${hex}')"></button>
-    `).join('');
-  });
-}
-
-function selectColorSwatch(key, hex){
-  document.getElementById('f-' + key).value = hex;
-  document.querySelectorAll(`#swatches-${key} .swatch`).forEach(btn=>{
-    btn.classList.toggle('selected', btn.dataset.hex.toLowerCase() === hex.toLowerCase());
-  });
-}
-
-function fillColorForm(){
-  renderSwatches();
-}
-
-async function saveColors(){
-  const s = nzLoadSiteSettings();
-  COLOR_FIELDS.forEach(key=>{
-    const el = document.getElementById('f-' + key);
-    if(el) s[key] = el.value;
-  });
-  showToast('جاري الحفظ...');
-  const ok = await nzSaveSiteSettings(s);
-  nzApplySiteSettings(document);
-  showToast(ok ? 'تم حفظ الألوان للجميع ✔' : 'تعذر الاتصال بالسحابة، حاول مرة ثانية ❌');
-}
-
-async function resetColors(){
-  if(!confirm('متأكد إنك بدك ترجع الألوان للوضع الافتراضي؟')) return;
-  const s = nzLoadSiteSettings();
-  COLOR_FIELDS.forEach(key=>{ s[key] = NZ_DEFAULT_SITE[key]; });
-  const ok = await nzSaveSiteSettings(s);
-  fillColorForm();
-  nzApplySiteSettings(document);
-  showToast(ok ? 'تم استرجاع الألوان الافتراضية للجميع' : 'تعذر الاتصال بالسحابة ❌');
-}
 
 /* ---------------- الأدمن ---------------- */
 function updateAdminLockUI(){
@@ -742,6 +629,7 @@ async function addNewProduct(){
 function fillPrefsForm(){
   const p = nzLoadPrefs();
   document.getElementById('pref-dark').checked = !!p.darkMode;
+  document.getElementById('pref-contrast').checked = !!p.highContrast;
   document.querySelectorAll('#font-seg button').forEach(b=>{
     b.classList.toggle('active', b.dataset.size === p.fontSize);
   });
@@ -749,6 +637,7 @@ function fillPrefsForm(){
 function savePrefsFromUI(){
   const p = nzLoadPrefs();
   p.darkMode = document.getElementById('pref-dark').checked;
+  p.highContrast = document.getElementById('pref-contrast').checked;
   nzSavePrefs(p);
   nzApplyPrefs(document);
   showToast(p.darkMode ? 'تم تفعيل الوضع الليلي 🌙' : 'تم إلغاء الوضع الليلي ☀️');
@@ -768,7 +657,6 @@ async function initAll(){
   await NZ_READY;
   nzApplySiteSettings(document);
   nzApplyPrefs(document);
-  fillColorForm();
   fillPrefsForm();
   updateAdminLockUI();
 }

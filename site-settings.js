@@ -84,7 +84,11 @@ async function nzCloudFetch() {
       headers: { 'X-Master-Key': NZ_CLOUD.MASTER_KEY },
       signal: controller.signal
     });
-    if (!res.ok) throw new Error('فشل تحميل البيانات من السحابة: ' + res.status);
+    if (!res.ok) {
+      const bodyText = await res.text().catch(()=> '');
+      console.error('nzCloudFetch failed:', res.status, res.statusText, bodyText);
+      throw new Error('فشل تحميل البيانات من السحابة: ' + res.status);
+    }
     const data = await res.json();
     return Object.assign({}, NZ_DEFAULT_CLOUD_STATE, data.record || {});
   } finally {
@@ -99,15 +103,20 @@ async function nzCloudPush() {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-Master-Key': NZ_CLOUD.MASTER_KEY
+        'X-Master-Key': NZ_CLOUD.MASTER_KEY,
+        'X-Bin-Versioning': 'false'
       },
       body: JSON.stringify(NZ_CLOUD_CACHE)
     });
-    if (!res.ok) throw new Error('فشل حفظ البيانات بالسحابة: ' + res.status);
+    if (!res.ok) {
+      const bodyText = await res.text().catch(()=> '');
+      console.error('nzCloudPush failed:', res.status, res.statusText, bodyText);
+      throw new Error('فشل حفظ البيانات بالسحابة: ' + res.status);
+    }
     nzSet(NZ_KEYS.CLOUD_CACHE, NZ_CLOUD_CACHE);
     return true;
   } catch (e) {
-    console.error(e);
+    console.error('nzCloudPush error:', e);
     return false;
   }
 }

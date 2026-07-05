@@ -381,7 +381,8 @@
             </div>
             <div class="field">
               <label>التصنيف</label>
-              <input type="text" id="new-cat" placeholder="مثال: الألبان والأجبان">
+              <select id="new-cat-select" onchange="onNewCatSelectChange()"></select>
+              <input type="text" id="new-cat" placeholder="اكتب اسم التصنيف الجديد" style="margin-top:6px; display:none;">
             </div>
             <div class="field">
               <label>السعر</label>
@@ -568,9 +569,35 @@ function changeAdminPass(){
 
 function populateCatFilter(){
   const products = nzGetProducts();
-  const cats = [...new Set(products.map(p=>p.categoryName || p.category))];
+  const cats = [...new Set(products.map(p=>(p.categoryName || p.category || '').trim()).filter(Boolean))];
   const sel = document.getElementById('admin-cat-filter');
   sel.innerHTML = '<option value="">كل التصنيفات</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  const newCatSel = document.getElementById('new-cat-select');
+  if(newCatSel){
+    const prevVal = newCatSel.value;
+    newCatSel.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('') + '<option value="__new__">+ إضافة تصنيف جديد</option>';
+    if(cats.includes(prevVal)) newCatSel.value = prevVal;
+    onNewCatSelectChange();
+  }
+}
+
+function onNewCatSelectChange(){
+  const sel = document.getElementById('new-cat-select');
+  const customInput = document.getElementById('new-cat');
+  if(!sel) return;
+  if(sel.value === '__new__'){
+    customInput.style.display = '';
+    customInput.focus();
+  } else {
+    customInput.style.display = 'none';
+  }
+}
+
+function getSelectedNewCategory(){
+  const sel = document.getElementById('new-cat-select');
+  if(sel && sel.value && sel.value !== '__new__') return sel.value.trim();
+  return document.getElementById('new-cat').value.trim();
 }
 
 function renderAdminTable(){
@@ -601,7 +628,7 @@ function renderAdminTable(){
           <input type="text" value="${p.name.replace(/"/g,'&quot;')}" onchange="updateProduct('${p.id}','name',this.value)">
         </div>
       </td>
-      <td><input type="text" value="${(p.categoryName||p.category).replace(/"/g,'&quot;')}" onchange="updateProduct('${p.id}','categoryName',this.value)"></td>
+      <td><input type="text" value="${(p.categoryName||p.category).replace(/"/g,'&quot;')}" onchange="updateProduct('${p.id}','categoryName',this.value.trim())"></td>
       <td><input type="text" value="${p.price}" style="max-width:80px;" onchange="updateProduct('${p.id}','price',this.value)"></td>
       <td><input type="text" value="${p.unit||''}" style="max-width:90px;" onchange="updateProduct('${p.id}','unit',this.value)"></td>
       <td>
@@ -683,7 +710,7 @@ async function handleRowImageUpload(event, id){
 
 async function addNewProduct(){
   const name = document.getElementById('new-name').value.trim();
-  const cat = document.getElementById('new-cat').value.trim() || 'أخرى';
+  const cat = getSelectedNewCategory() || 'أخرى';
   const price = document.getElementById('new-price').value.trim() || '0.00';
   const img = pendingNewProductImage || 'logo.jpeg';
   if(!name){ showToast('لازم تكتب اسم المنتج'); return; }

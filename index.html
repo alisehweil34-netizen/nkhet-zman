@@ -792,6 +792,9 @@
     nzApplySiteSettings(document);
     nzApplyPrefs(document);
     renderMenu();
+  }).catch((err) => {
+    console.error('cloud init failed unexpectedly', err);
+    renderMenu();
   });
 
   // إعادة تطبيق التفضيلات إذا اتغيرت من تبويب/صفحة ثانية بنفس المتصفح (مثلاً صفحة الإعدادات مفتوحة بتبويب جنب)

@@ -400,6 +400,20 @@
         </div>
 
         <div class="card-box">
+          <h2>نقل الإعدادات بين المتصفحات / الأجهزة</h2>
+          <p class="sub">
+            كل التعديلات (المنتجات، الألوان، بيانات الموقع...) بتنحفظ جوا متصفحك فقط (localStorage)،
+            فلهيك ما بتظهر إذا فتحت الموقع من متصفح ثاني أو جهاز ثاني أو حتى من نافذة تصفح خفي.
+            لنقلها: نزّل نسخة احتياطية من هالمتصفح، وارفعها من المتصفح التاني.
+          </p>
+          <div class="row" style="gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="exportBackupToFile()">⬇️ تنزيل نسخة احتياطية</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-backup-file').click()">⬆️ استيراد نسخة احتياطية</button>
+            <input type="file" id="import-backup-file" accept="application/json" style="display:none;" onchange="importBackupFromFile(event)">
+          </div>
+        </div>
+
+        <div class="card-box">
           <h2>تغيير كلمة سر الأدمن</h2>
           <p class="sub">هاي الحماية بسيطة (محفوظة بالمتصفح) وما بتغني عن حماية سيرفر حقيقية.</p>
           <div class="field" style="max-width:320px;">
@@ -439,6 +453,40 @@ function showToast(msg){
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- نسخ احتياطي / نقل بين المتصفحات ---------------- */
+function exportBackupToFile(){
+  const json = nzExportBackup();
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = 'nz-backup-' + stamp + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('تم تنزيل النسخة الاحتياطية ✔');
+}
+
+function importBackupFromFile(event){
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onerror = () => showToast('تعذرت قراءة الملف');
+  reader.onload = () => {
+    try {
+      nzImportBackup(reader.result);
+      showToast('تم استيراد الإعدادات ✔ ... جارِ إعادة التحميل');
+      setTimeout(() => location.reload(), 900);
+    } catch (e) {
+      showToast('الملف غير صالح، تأكد إنه نفس ملف النسخة الاحتياطية');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
 }
 
 /* ---------------- الألوان ---------------- */

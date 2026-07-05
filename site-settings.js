@@ -77,12 +77,19 @@ let NZ_CLOUD_CACHE = null;   // آخر نسخة من بيانات السحابة
 let NZ_READY_PROMISE = null; // بروميس تحميل أولي، تنستنى عليه قبل أي عرض للبيانات
 
 async function nzCloudFetch() {
-  const res = await fetch(NZ_CLOUD.BASE_URL + NZ_CLOUD.BIN_ID + '/latest', {
-    headers: { 'X-Master-Key': NZ_CLOUD.MASTER_KEY }
-  });
-  if (!res.ok) throw new Error('فشل تحميل البيانات من السحابة: ' + res.status);
-  const data = await res.json();
-  return Object.assign({}, NZ_DEFAULT_CLOUD_STATE, data.record || {});
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(NZ_CLOUD.BASE_URL + NZ_CLOUD.BIN_ID + '/latest', {
+      headers: { 'X-Master-Key': NZ_CLOUD.MASTER_KEY },
+      signal: controller.signal
+    });
+    if (!res.ok) throw new Error('فشل تحميل البيانات من السحابة: ' + res.status);
+    const data = await res.json();
+    return Object.assign({}, NZ_DEFAULT_CLOUD_STATE, data.record || {});
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function nzCloudPush() {

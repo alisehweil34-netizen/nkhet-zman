@@ -98,6 +98,17 @@ async function nzCloudFetch() {
 
 async function nzCloudPush() {
   if (!NZ_CLOUD_CACHE) return false;
+  window.NZ_LAST_ERROR = null;
+  const payload = JSON.stringify(NZ_CLOUD_CACHE);
+
+  // قاعدة JSONBin المجانية عندها حد أقصى 1 ميجابايت لكل قاعدة — نحط هامش أمان
+  const MAX_PAYLOAD_CHARS = 900000;
+  if (payload.length > MAX_PAYLOAD_CHARS) {
+    console.error('nzCloudPush: payload too large (' + payload.length + ' chars) — exceeds JSONBin free-plan 1MB limit');
+    window.NZ_LAST_ERROR = 'حجم البيانات (خصوصًا الصور) وصل الحد الأقصى المسموح بالخطة المجانية لقاعدة البيانات (1 ميجابايت). جرب صورة أصغر، أو احذف بعض الصور/المنتجات القديمة عشان تفضى مساحة.';
+    return false;
+  }
+
   try {
     const res = await fetch(NZ_CLOUD.BASE_URL + NZ_CLOUD.BIN_ID, {
       method: 'PUT',
@@ -106,17 +117,21 @@ async function nzCloudPush() {
         'X-Master-Key': NZ_CLOUD.MASTER_KEY,
         'X-Bin-Versioning': 'false'
       },
-      body: JSON.stringify(NZ_CLOUD_CACHE)
+      body: payload
     });
     if (!res.ok) {
       const bodyText = await res.text().catch(()=> '');
       console.error('nzCloudPush failed:', res.status, res.statusText, bodyText);
+      window.NZ_LAST_ERROR = (res.status === 413)
+        ? 'حجم البيانات (خصوصًا الصور) تجاوز الحد المسموح بقاعدة البيانات. جرب صورة أصغر أو احذف بعض المنتجات القديمة.'
+        : 'فشل الحفظ بالسحابة (Status ' + res.status + ')';
       throw new Error('فشل حفظ البيانات بالسحابة: ' + res.status);
     }
     nzSet(NZ_KEYS.CLOUD_CACHE, NZ_CLOUD_CACHE);
     return true;
   } catch (e) {
     console.error('nzCloudPush error:', e);
+    if (!window.NZ_LAST_ERROR) window.NZ_LAST_ERROR = 'تعذر الاتصال بالسحابة، تأكد من الإنترنت وحاول مرة ثانية.';
     return false;
   }
 }
@@ -267,8 +282,8 @@ async function nzResetAllProducts() {
 
 /* ---------- رفع الصور من جهاز المستخدم ---------- */
 function nzFileToDataURL(file, maxDim, quality) {
-  maxDim = maxDim || 900;
-  quality = quality || 0.82;
+  maxDim = maxDim || 480;
+  quality = quality || 0.6;
   return new Promise((resolve, reject) => {
     if (!file || !file.type.startsWith('image/')) {
       reject(new Error('الملف المختار مش صورة'));
@@ -290,7 +305,16 @@ function nzFileToDataURL(file, maxDim, quality) {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+
+        // نقلّص الجودة تدريجيًا لحد ما نضمن حجم صغير يناسب حد قاعدة البيانات المجانية (1 ميجا بايت لكل القاعدة)
+        let q = quality;
+        let dataUrl = canvas.toDataURL('image/jpeg', q);
+        const MAX_CHARS = 90000; // تقريبًا 65 كيلوبايت للصورة الواحدة
+        while (dataUrl.length > MAX_CHARS && q > 0.25) {
+          q -= 0.1;
+          dataUrl = canvas.toDataURL('image/jpeg', q);
+        }
+        resolve(dataUrl);
       };
       img.src = reader.result;
     };

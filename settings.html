@@ -423,7 +423,9 @@ function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2200);
+  const duration = Math.min(7000, Math.max(2200, msg.length * 60));
+  clearTimeout(window._nzToastTimer);
+  window._nzToastTimer = setTimeout(()=>t.classList.remove('show'), duration);
 }
 
 
@@ -551,7 +553,7 @@ async function updateProduct(id, field, value){
   }
   populateCatFilter();
   renderAdminTable();
-  showToast(ok ? 'تم تحديث المنتج للجميع ✔' : 'تعذر الاتصال بالسحابة ❌');
+  showToast(ok ? 'تم تحديث المنتج للجميع ✔' : (window.NZ_LAST_ERROR || 'تعذر الاتصال بالسحابة ❌'));
 }
 
 async function toggleHide(id, currentlyHidden){
@@ -592,7 +594,7 @@ async function handleRowImageUpload(event, id){
   try{
     showToast('جاري رفع الصورة...');
     const dataUrl = await nzFileToDataURL(file);
-    updateProduct(id, 'img', dataUrl);
+    await updateProduct(id, 'img', dataUrl);
   }catch(err){
     showToast('تعذر رفع الصورة ❌');
   }
@@ -622,7 +624,7 @@ async function addNewProduct(){
 
   populateCatFilter();
   renderAdminTable();
-  showToast(ok ? 'تمت إضافة المنتج للجميع ✔' : 'تعذر الاتصال بالسحابة ❌');
+  showToast(ok ? 'تمت إضافة المنتج للجميع ✔' : (window.NZ_LAST_ERROR || 'تعذر الاتصال بالسحابة ❌'));
 }
 
 /* ---------------- تفضيلات المستخدم ---------------- */

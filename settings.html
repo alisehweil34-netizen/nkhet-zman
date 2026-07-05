@@ -115,6 +115,18 @@
   }
   .color-row input[type=text]{flex:1;}
 
+  .swatch-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .swatch{
+    width:36px; height:36px; border-radius:50%; border:2px solid var(--line);
+    cursor:pointer; transition:.15s; position:relative; flex-shrink:0; padding:0;
+  }
+  .swatch:hover{transform:scale(1.1);}
+  .swatch.selected{border-color:var(--ink); box-shadow:0 0 0 2px var(--milk), 0 0 0 4px var(--ink);}
+  .swatch.selected:after{
+    content:"✔"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:.85rem; font-weight:900; text-shadow:0 0 3px rgba(0,0,0,.7);
+  }
+
   .btn{
     display:inline-flex; align-items:center; gap:8px;
     padding:12px 24px; border-radius:100px; font-size:.95rem; font-weight:700;
@@ -262,28 +274,29 @@
         <p class="sub">غيّر هوية الألوان بالكامل — التغيير بينعكس فورًا على الموقع.</p>
         <div class="field-grid">
           <div class="field">
-            <label>الخلفية الرئيسية</label>
-            <div class="color-row"><input type="color" id="c-colorCream"><input type="text" id="f-colorCream"></div>
+            <label>خلفية كل صفحات الموقع</label>
+            <div class="swatch-row" id="swatches-colorCream"></div>
+            <input type="hidden" id="f-colorCream">
           </div>
           <div class="field">
-            <label>الأخضر الزيتوني الغامق</label>
-            <div class="color-row"><input type="color" id="c-colorOliveDark"><input type="text" id="f-colorOliveDark"></div>
+            <label>العناوين، الأزرار الرئيسية، والحدود</label>
+            <div class="swatch-row" id="swatches-colorOliveDark"></div>
+            <input type="hidden" id="f-colorOliveDark">
           </div>
           <div class="field">
-            <label>الأخضر الزيتوني</label>
-            <div class="color-row"><input type="color" id="c-colorOlive"><input type="text" id="f-colorOlive"></div>
+            <label>النصوص المميزة والزخارف والحدود الرفيعة</label>
+            <div class="swatch-row" id="swatches-colorBrass"></div>
+            <input type="hidden" id="f-colorBrass">
           </div>
           <div class="field">
-            <label>البرونزي (Brass)</label>
-            <div class="color-row"><input type="color" id="c-colorBrass"><input type="text" id="f-colorBrass"></div>
+            <label>حدود الصور والتفاصيل الزخرفية الثانوية</label>
+            <div class="swatch-row" id="swatches-colorBrassLight"></div>
+            <input type="hidden" id="f-colorBrassLight">
           </div>
           <div class="field">
-            <label>البرونزي الفاتح</label>
-            <div class="color-row"><input type="color" id="c-colorBrassLight"><input type="text" id="f-colorBrassLight"></div>
-          </div>
-          <div class="field">
-            <label>العنابي (Burgundy)</label>
-            <div class="color-row"><input type="color" id="c-colorBurgundy"><input type="text" id="f-colorBurgundy"></div>
+            <label>الأسعار وحالة تمرير الفأرة على الأزرار</label>
+            <div class="swatch-row" id="swatches-colorBurgundy"></div>
+            <input type="hidden" id="f-colorBurgundy">
           </div>
         </div>
         <div class="btn-row">
@@ -319,15 +332,6 @@
           </div>
         </div>
 
-        <div class="pref-row">
-          <div class="pref-info">
-            <b>اللغة</b>
-            <span>لغة الموقع الحالية</span>
-          </div>
-          <div class="seg">
-            <button class="active">العربية</button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -343,7 +347,6 @@
             <input type="text" id="admin-pass-input" placeholder="كلمة السر" onkeydown="if(event.key==='Enter') tryAdminLogin()">
           </div>
           <button class="btn btn-primary" onclick="tryAdminLogin()" style="width:100%; justify-content:center;">دخول</button>
-          <p class="hint">كلمة السر الافتراضية: admin123 — غيّرها من "تغيير كلمة السر" بعد الدخول.</p>
         </div>
       </div>
 
@@ -397,20 +400,6 @@
               </div>
             </div>
             <button class="btn btn-primary btn-sm" onclick="addNewProduct()">+ إضافة</button>
-          </div>
-        </div>
-
-        <div class="card-box">
-          <h2>نقل الإعدادات بين المتصفحات / الأجهزة</h2>
-          <p class="sub">
-            كل التعديلات (المنتجات، الألوان، بيانات الموقع...) بتنحفظ جوا متصفحك فقط (localStorage)،
-            فلهيك ما بتظهر إذا فتحت الموقع من متصفح ثاني أو جهاز ثاني أو حتى من نافذة تصفح خفي.
-            لنقلها: نزّل نسخة احتياطية من هالمتصفح، وارفعها من المتصفح التاني.
-          </p>
-          <div class="row" style="gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-primary btn-sm" onclick="exportBackupToFile()">⬇️ تنزيل نسخة احتياطية</button>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-backup-file').click()">⬆️ استيراد نسخة احتياطية</button>
-            <input type="file" id="import-backup-file" accept="application/json" style="display:none;" onchange="importBackupFromFile(event)">
           </div>
         </div>
 
@@ -491,29 +480,43 @@ function importBackupFromFile(event){
   event.target.value = '';
 }
 
-/* ---------------- الألوان ---------------- */
-const COLOR_FIELDS = ['colorCream','colorOliveDark','colorOlive','colorBrass','colorBrassLight','colorBurgundy'];
+/* ---------------- الألوان (باليتة ثابتة) ---------------- */
+const COLOR_FIELDS = ['colorCream','colorOliveDark','colorBrass','colorBrassLight','colorBurgundy'];
 
-function fillColorForm(){
+const COLOR_PALETTES = {
+  colorCream:     ['#F6EFDD','#FFFDF8','#EAE3F2','#DCEAE3','#F5E1E3','#E8ECE0','#FBEFD9','#E4E8ED'],
+  colorOliveDark: ['#2E3524','#1F2937','#3B2A22','#2B2B2B','#3A1F2E','#1E3A34','#33241C','#242038'],
+  colorBrass:     ['#A9782F','#B5651D','#8A6D3B','#C1440E','#7C5A2B','#9E5B3C','#B8860B','#6B4226'],
+  colorBrassLight:['#C79A4B','#E0B978','#D8A0A0','#B7CBA8','#C9B7DB','#F0C987','#A9C6C1','#E3B98F'],
+  colorBurgundy:  ['#6E2430','#8E2C3B','#7A1F3D','#5B2333','#943126','#4A2E4F','#1F5C4A','#2C3E6E']
+};
+
+function renderSwatches(){
   const s = nzLoadSiteSettings();
   COLOR_FIELDS.forEach(key=>{
-    const el = document.getElementById('f-' + key);
-    if(el) el.value = s[key];
-    const colorEl = document.getElementById('c-' + key);
-    if(colorEl) colorEl.value = s[key];
+    const wrap = document.getElementById('swatches-' + key);
+    const hidden = document.getElementById('f-' + key);
+    if(!wrap || !hidden) return;
+    const current = (s[key] || '').toLowerCase();
+    hidden.value = s[key];
+    wrap.innerHTML = COLOR_PALETTES[key].map(hex => `
+      <button type="button" class="swatch${hex.toLowerCase() === current ? ' selected' : ''}"
+        style="background:${hex};" data-key="${key}" data-hex="${hex}"
+        title="${hex}" onclick="selectColorSwatch('${key}','${hex}')"></button>
+    `).join('');
   });
 }
 
-COLOR_FIELDS.forEach(key=>{
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const colorPicker = document.getElementById('c-' + key);
-    const textField = document.getElementById('f-' + key);
-    if(colorPicker && textField){
-      colorPicker.addEventListener('input', ()=> textField.value = colorPicker.value);
-      textField.addEventListener('input', ()=>{ if(/^#[0-9a-fA-F]{6}$/.test(textField.value)) colorPicker.value = textField.value; });
-    }
+function selectColorSwatch(key, hex){
+  document.getElementById('f-' + key).value = hex;
+  document.querySelectorAll(`#swatches-${key} .swatch`).forEach(btn=>{
+    btn.classList.toggle('selected', btn.dataset.hex.toLowerCase() === hex.toLowerCase());
   });
-});
+}
+
+function fillColorForm(){
+  renderSwatches();
+}
 
 async function saveColors(){
   const s = nzLoadSiteSettings();

@@ -476,11 +476,12 @@ function importBackupFromFile(event){
   if (!file) return;
   const reader = new FileReader();
   reader.onerror = () => showToast('تعذرت قراءة الملف');
-  reader.onload = () => {
+  reader.onload = async () => {
     try {
-      nzImportBackup(reader.result);
-      showToast('تم استيراد الإعدادات ✔ ... جارِ إعادة التحميل');
-      setTimeout(() => location.reload(), 900);
+      showToast('جاري الاستيراد...');
+      const ok = await nzImportBackup(reader.result);
+      showToast(ok ? 'تم استيراد الإعدادات للجميع ✔ ... جارِ إعادة التحميل' : 'تعذر الاتصال بالسحابة ❌');
+      if (ok) setTimeout(() => location.reload(), 900);
     } catch (e) {
       showToast('الملف غير صالح، تأكد إنه نفس ملف النسخة الاحتياطية');
     }
@@ -513,25 +514,26 @@ COLOR_FIELDS.forEach(key=>{
   });
 });
 
-function saveColors(){
+async function saveColors(){
   const s = nzLoadSiteSettings();
   COLOR_FIELDS.forEach(key=>{
     const el = document.getElementById('f-' + key);
     if(el) s[key] = el.value;
   });
-  nzSaveSiteSettings(s);
+  showToast('جاري الحفظ...');
+  const ok = await nzSaveSiteSettings(s);
   nzApplySiteSettings(document);
-  showToast('تم حفظ الألوان ✔');
+  showToast(ok ? 'تم حفظ الألوان للجميع ✔' : 'تعذر الاتصال بالسحابة، حاول مرة ثانية ❌');
 }
 
-function resetColors(){
+async function resetColors(){
   if(!confirm('متأكد إنك بدك ترجع الألوان للوضع الافتراضي؟')) return;
   const s = nzLoadSiteSettings();
   COLOR_FIELDS.forEach(key=>{ s[key] = NZ_DEFAULT_SITE[key]; });
-  nzSaveSiteSettings(s);
+  const ok = await nzSaveSiteSettings(s);
   fillColorForm();
   nzApplySiteSettings(document);
-  showToast('تم استرجاع الألوان الافتراضية');
+  showToast(ok ? 'تم استرجاع الألوان الافتراضية للجميع' : 'تعذر الاتصال بالسحابة ❌');
 }
 
 /* ---------------- الأدمن ---------------- */
@@ -614,39 +616,38 @@ function renderAdminTable(){
   `).join('');
 }
 
-function updateProduct(id, field, value){
-  const products = nzGetProducts();
+async function updateProduct(id, field, value){
   const isExtra = !(typeof NZ_BASE_PRODUCTS !== 'undefined' && NZ_BASE_PRODUCTS.some(p=>p.id===id));
   let ok = true;
   if(isExtra){
-    const extra = nzGet(NZ_KEYS.EXTRA, []);
-    const idx = extra.findIndex(p=>p.id===id);
-    if(idx > -1){ extra[idx][field] = value; if(field==='categoryName') extra[idx].category = value; ok = nzSet(NZ_KEYS.EXTRA, extra); }
+    const idx = NZ_CLOUD_CACHE.extra.findIndex(p=>p.id===id);
+    if(idx > -1){
+      NZ_CLOUD_CACHE.extra[idx][field] = value;
+      if(field==='categoryName') NZ_CLOUD_CACHE.extra[idx].category = value;
+      ok = await nzCloudPush();
+    }
   } else {
     const changes = {};
     changes[field] = value;
     if(field === 'categoryName') changes.category = value;
-    ok = nzSaveOverride(id, changes);
+    ok = await nzSaveOverride(id, changes);
   }
   populateCatFilter();
   renderAdminTable();
-  if(ok){
-    showToast('تم تحديث المنتج');
-  } else {
-    showToast('تعذر الحفظ — مساحة التخزين ممتلئة ❌');
-  }
+  showToast(ok ? 'تم تحديث المنتج للجميع ✔' : 'تعذر الاتصال بالسحابة ❌');
 }
 
-function toggleHide(id, currentlyHidden){
-  if(currentlyHidden) nzRestoreProduct(id); else nzDeleteProduct(id);
+async function toggleHide(id, currentlyHidden){
+  showToast('جاري الحفظ...');
+  if(currentlyHidden) await nzRestoreProduct(id); else await nzDeleteProduct(id);
   renderAdminTable();
 }
 
-function removeProduct(id){
+async function removeProduct(id){
   if(!confirm('حذف هالمنتج نهائيًا من القائمة؟')) return;
-  nzDeleteProduct(id);
+  await nzDeleteProduct(id);
   renderAdminTable();
-  showToast('تم الحذف');
+  showToast('تم الحذف للجميع ✔');
 }
 
 /* ---------------- رفع الصور ---------------- */
@@ -680,15 +681,16 @@ async function handleRowImageUpload(event, id){
   }
 }
 
-function addNewProduct(){
+async function addNewProduct(){
   const name = document.getElementById('new-name').value.trim();
   const cat = document.getElementById('new-cat').value.trim() || 'أخرى';
   const price = document.getElementById('new-price').value.trim() || '0.00';
   const img = pendingNewProductImage || 'logo.jpeg';
   if(!name){ showToast('لازم تكتب اسم المنتج'); return; }
 
+  showToast('جاري الحفظ...');
   const id = 'custom-' + Date.now();
-  const ok = nzAddProduct({
+  const ok = await nzAddProduct({
     id, name, category: cat, categoryName: cat, price, unit: 'د.أ/كغ', img, alt: name
   });
 
@@ -703,7 +705,7 @@ function addNewProduct(){
 
   populateCatFilter();
   renderAdminTable();
-  showToast(ok ? 'تمت إضافة المنتج ✔' : 'تعذر الحفظ — مساحة التخزين ممتلئة ❌');
+  showToast(ok ? 'تمت إضافة المنتج للجميع ✔' : 'تعذر الاتصال بالسحابة ❌');
 }
 
 /* ---------------- تفضيلات المستخدم ---------------- */
@@ -731,7 +733,9 @@ function setFontSize(size){
 }
 
 /* ---------------- تهيئة عامة ---------------- */
-function initAll(){
+async function initAll(){
+  showToast('جاري تحميل بيانات المتجر...');
+  await NZ_READY;
   nzApplySiteSettings(document);
   nzApplyPrefs(document);
   fillColorForm();

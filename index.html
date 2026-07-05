@@ -715,10 +715,6 @@
 <script src="products-data.js"></script>
 <script src="site-settings.js"></script>
 <script>
-  /* تطبيق إعدادات الموقع وتفضيلات المستخدم فور تحميل الصفحة */
-  nzApplySiteSettings(document);
-  nzApplyPrefs(document);
-
   function escapeHtml(str){
     return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
@@ -791,9 +787,14 @@
     blocks.forEach(b=>observer.observe(b));
   }
 
-  renderMenu();
+  /* ننتظر تحميل بيانات المتجر من السحابة قبل أي عرض */
+  NZ_READY.then(() => {
+    nzApplySiteSettings(document);
+    nzApplyPrefs(document);
+    renderMenu();
+  });
 
-  // إعادة تطبيق التفضيلات إذا اتغيرت من تبويب/صفحة ثانية (مثلاً صفحة الإعدادات مفتوحة بتبويب جنب)
+  // إعادة تطبيق التفضيلات إذا اتغيرت من تبويب/صفحة ثانية بنفس المتصفح (مثلاً صفحة الإعدادات مفتوحة بتبويب جنب)
   window.addEventListener('storage', (e) => {
     if(e.key && e.key.startsWith('nz_')){
       nzApplySiteSettings(document);
@@ -801,6 +802,15 @@
       renderMenu();
     }
   });
+
+  // تحديث دوري بسيط كل 30 ثانية عشان أي تعديل من الأدمن (بجهاز/متصفح تاني) يظهر تلقائيًا بدون ما الزائر يعمل تحديث للصفحة يدويًا
+  setInterval(() => {
+    nzRefreshCloud().then(() => {
+      nzApplySiteSettings(document);
+      nzApplyPrefs(document);
+      renderMenu();
+    });
+  }, 30000);
 </script>
 
 </body>

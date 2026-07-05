@@ -1,17 +1,24 @@
 /* =========================================================
    نكهة زمان — محرك الإعدادات المشترك
    يُستخدم في index.html و settings.html
-   يعتمد على localStorage (كل الإعدادات محفوظة على هالمتصفح فقط)
+   الآن يعتمد على قاعدة بيانات سحابية (JSONBin) بحيث أي تعديل
+   من لوحة الإعدادات يظهر لكل الزوار من أي متصفح/جهاز.
+   يبقى فيه نسخة محلية (localStorage) تُستخدم فقط كـ"احتياط"
+   وقت ما يكون في مشكلة اتصال بالإنترنت.
    ========================================================= */
 
 const NZ_KEYS = {
-  SITE: 'nz_site_settings_v1',
-  PREFS: 'nz_user_prefs_v1',
-  OVERRIDES: 'nz_product_overrides_v1',
-  EXTRA: 'nz_product_extra_v1',
-  HIDDEN: 'nz_product_hidden_v1',
+  PREFS: 'nz_user_prefs_v1',           // تفضيلات شخصية بالجهاز فقط (وضع ليلي/حجم خط)
   ADMIN_PASS: 'nz_admin_password_v1',
-  ADMIN_SESSION: 'nz_admin_session_v1'
+  ADMIN_SESSION: 'nz_admin_session_v1',
+  CLOUD_CACHE: 'nz_cloud_cache_v1'     // نسخة احتياطية محلية من بيانات السحابة
+};
+
+/* ---------- إعداد الاتصال بقاعدة البيانات السحابية (JSONBin) ---------- */
+const NZ_CLOUD = {
+  BIN_ID: '6a4aaeb6da38895dfe31de10',
+  MASTER_KEY: '$2a$10$VSx4ZS/VnoEafmwtXxbSe.S/pdsmmNg7hinKKiyAoAagVMNHjy.Xq',
+  BASE_URL: 'https://api.jsonbin.io/v3/b/'
 };
 
 const NZ_DEFAULT_SITE = {
@@ -38,7 +45,14 @@ const NZ_DEFAULT_PREFS = {
   fontSize: 'medium' // small | medium | large
 };
 
-/* ---------- تخزين عام ---------- */
+const NZ_DEFAULT_CLOUD_STATE = {
+  site: {},
+  overrides: {},
+  extra: [],
+  hidden: {}
+};
+
+/* ---------- تخزين محلي عام (تفضيلات + احتياط) ---------- */
 function nzGet(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -58,18 +72,80 @@ function nzSet(key, value) {
   }
 }
 
-/* ---------- إعدادات الموقع العامة ---------- */
-function nzLoadSiteSettings() {
-  return Object.assign({}, NZ_DEFAULT_SITE, nzGet(NZ_KEYS.SITE, {}));
-}
-function nzSaveSiteSettings(settings) {
-  return nzSet(NZ_KEYS.SITE, settings);
-}
-function nzResetSiteSettings() {
-  localStorage.removeItem(NZ_KEYS.SITE);
+/* ---------- الاتصال بالسحابة ---------- */
+let NZ_CLOUD_CACHE = null;   // آخر نسخة من بيانات السحابة محملة بالذاكرة
+let NZ_READY_PROMISE = null; // بروميس تحميل أولي، تنستنى عليه قبل أي عرض للبيانات
+
+async function nzCloudFetch() {
+  const res = await fetch(NZ_CLOUD.BASE_URL + NZ_CLOUD.BIN_ID + '/latest', {
+    headers: { 'X-Master-Key': NZ_CLOUD.MASTER_KEY }
+  });
+  if (!res.ok) throw new Error('فشل تحميل البيانات من السحابة: ' + res.status);
+  const data = await res.json();
+  return Object.assign({}, NZ_DEFAULT_CLOUD_STATE, data.record || {});
 }
 
-/* ---------- تفضيلات المستخدم ---------- */
+async function nzCloudPush() {
+  if (!NZ_CLOUD_CACHE) return false;
+  try {
+    const res = await fetch(NZ_CLOUD.BASE_URL + NZ_CLOUD.BIN_ID, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': NZ_CLOUD.MASTER_KEY
+      },
+      body: JSON.stringify(NZ_CLOUD_CACHE)
+    });
+    if (!res.ok) throw new Error('فشل حفظ البيانات بالسحابة: ' + res.status);
+    nzSet(NZ_KEYS.CLOUD_CACHE, NZ_CLOUD_CACHE);
+    return true;
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+}
+
+/* تُستدعى مرة وحدة تلقائيًا بأول ما تنحمّل الصفحة، وبترجع بروميس
+   لازم ننتظره قبل ما نعرض أي بيانات (منتجات / إعدادات موقع) */
+function nzInit() {
+  if (NZ_READY_PROMISE) return NZ_READY_PROMISE;
+  NZ_READY_PROMISE = nzCloudFetch()
+    .then(record => {
+      NZ_CLOUD_CACHE = record;
+      nzSet(NZ_KEYS.CLOUD_CACHE, NZ_CLOUD_CACHE);
+      return NZ_CLOUD_CACHE;
+    })
+    .catch(err => {
+      console.error('تعذر الاتصال بقاعدة البيانات السحابية، رح نستخدم آخر نسخة محفوظة بهالجهاز', err);
+      NZ_CLOUD_CACHE = nzGet(NZ_KEYS.CLOUD_CACHE, null) || Object.assign({}, NZ_DEFAULT_CLOUD_STATE);
+      return NZ_CLOUD_CACHE;
+    });
+  return NZ_READY_PROMISE;
+}
+
+/* إعادة تحميل قسري من السحابة (تُستخدم بعد استيراد نسخة احتياطية مثلًا) */
+function nzRefreshCloud() {
+  NZ_READY_PROMISE = null;
+  return nzInit();
+}
+
+/* ---------- إعدادات الموقع العامة ---------- */
+function nzLoadSiteSettings() {
+  const cloudSite = (NZ_CLOUD_CACHE && NZ_CLOUD_CACHE.site) || {};
+  return Object.assign({}, NZ_DEFAULT_SITE, cloudSite);
+}
+async function nzSaveSiteSettings(settings) {
+  if (!NZ_CLOUD_CACHE) await nzInit();
+  NZ_CLOUD_CACHE.site = settings;
+  return nzCloudPush();
+}
+async function nzResetSiteSettings() {
+  if (!NZ_CLOUD_CACHE) await nzInit();
+  NZ_CLOUD_CACHE.site = {};
+  return nzCloudPush();
+}
+
+/* ---------- تفضيلات المستخدم (محلية بكل جهاز، ما تنحفظ بالسحابة) ---------- */
 function nzLoadPrefs() {
   return Object.assign({}, NZ_DEFAULT_PREFS, nzGet(NZ_KEYS.PREFS, {}));
 }
@@ -117,9 +193,9 @@ function nzApplyPrefs(doc) {
 /* ---------- المنتجات: دمج الأساسية + التعديلات + الإضافات + الإخفاء ---------- */
 function nzGetProducts() {
   const base = (typeof NZ_BASE_PRODUCTS !== 'undefined') ? NZ_BASE_PRODUCTS : [];
-  const overrides = nzGet(NZ_KEYS.OVERRIDES, {});
-  const extra = nzGet(NZ_KEYS.EXTRA, []);
-  const hidden = nzGet(NZ_KEYS.HIDDEN, {});
+  const overrides = (NZ_CLOUD_CACHE && NZ_CLOUD_CACHE.overrides) || {};
+  const extra = (NZ_CLOUD_CACHE && NZ_CLOUD_CACHE.extra) || [];
+  const hidden = (NZ_CLOUD_CACHE && NZ_CLOUD_CACHE.hidden) || {};
 
   const merged = base.map(p => {
     const o = overrides[p.id];
@@ -135,42 +211,42 @@ function nzGetProducts() {
   return merged;
 }
 
-function nzSaveOverride(id, changes) {
-  const overrides = nzGet(NZ_KEYS.OVERRIDES, {});
-  overrides[id] = Object.assign({}, overrides[id], changes);
-  return nzSet(NZ_KEYS.OVERRIDES, overrides);
+async function nzSaveOverride(id, changes) {
+  if (!NZ_CLOUD_CACHE) await nzInit();
+  NZ_CLOUD_CACHE.overrides[id] = Object.assign({}, NZ_CLOUD_CACHE.overrides[id], changes);
+  return nzCloudPush();
 }
 
-function nzAddProduct(product) {
-  const extra = nzGet(NZ_KEYS.EXTRA, []);
-  extra.push(product);
-  return nzSet(NZ_KEYS.EXTRA, extra);
+async function nzAddProduct(product) {
+  if (!NZ_CLOUD_CACHE) await nzInit();
+  NZ_CLOUD_CACHE.extra.push(product);
+  return nzCloudPush();
 }
 
-function nzDeleteProduct(id) {
+async function nzDeleteProduct(id) {
+  if (!NZ_CLOUD_CACHE) await nzInit();
   // إذا كان منتج أساسي: نخفيه فقط (ما بقدر نحذفه من الملف الأصلي)
-  const extra = nzGet(NZ_KEYS.EXTRA, []);
-  const idxExtra = extra.findIndex(p => p.id === id);
+  const idxExtra = NZ_CLOUD_CACHE.extra.findIndex(p => p.id === id);
   if (idxExtra > -1) {
-    extra.splice(idxExtra, 1);
-    nzSet(NZ_KEYS.EXTRA, extra);
-    return;
+    NZ_CLOUD_CACHE.extra.splice(idxExtra, 1);
+    return nzCloudPush();
   }
-  const hidden = nzGet(NZ_KEYS.HIDDEN, {});
-  hidden[id] = true;
-  nzSet(NZ_KEYS.HIDDEN, hidden);
+  NZ_CLOUD_CACHE.hidden[id] = true;
+  return nzCloudPush();
 }
 
-function nzRestoreProduct(id) {
-  const hidden = nzGet(NZ_KEYS.HIDDEN, {});
-  delete hidden[id];
-  nzSet(NZ_KEYS.HIDDEN, hidden);
+async function nzRestoreProduct(id) {
+  if (!NZ_CLOUD_CACHE) await nzInit();
+  delete NZ_CLOUD_CACHE.hidden[id];
+  return nzCloudPush();
 }
 
-function nzResetAllProducts() {
-  localStorage.removeItem(NZ_KEYS.OVERRIDES);
-  localStorage.removeItem(NZ_KEYS.EXTRA);
-  localStorage.removeItem(NZ_KEYS.HIDDEN);
+async function nzResetAllProducts() {
+  if (!NZ_CLOUD_CACHE) await nzInit();
+  NZ_CLOUD_CACHE.overrides = {};
+  NZ_CLOUD_CACHE.extra = [];
+  NZ_CLOUD_CACHE.hidden = {};
+  return nzCloudPush();
 }
 
 /* ---------- رفع الصور من جهاز المستخدم ---------- */
@@ -229,18 +305,23 @@ function nzLogoutAdmin() {
 /* ---------- تصدير / استيراد نسخة احتياطية كاملة ---------- */
 function nzExportBackup() {
   return JSON.stringify({
-    site: nzGet(NZ_KEYS.SITE, {}),
+    site: (NZ_CLOUD_CACHE && NZ_CLOUD_CACHE.site) || {},
     prefs: nzGet(NZ_KEYS.PREFS, {}),
-    overrides: nzGet(NZ_KEYS.OVERRIDES, {}),
-    extra: nzGet(NZ_KEYS.EXTRA, []),
-    hidden: nzGet(NZ_KEYS.HIDDEN, {})
+    overrides: (NZ_CLOUD_CACHE && NZ_CLOUD_CACHE.overrides) || {},
+    extra: (NZ_CLOUD_CACHE && NZ_CLOUD_CACHE.extra) || [],
+    hidden: (NZ_CLOUD_CACHE && NZ_CLOUD_CACHE.hidden) || {}
   }, null, 2);
 }
-function nzImportBackup(jsonStr) {
+async function nzImportBackup(jsonStr) {
   const data = JSON.parse(jsonStr);
-  if (data.site) nzSet(NZ_KEYS.SITE, data.site);
+  if (!NZ_CLOUD_CACHE) await nzInit();
+  if (data.site) NZ_CLOUD_CACHE.site = data.site;
+  if (data.overrides) NZ_CLOUD_CACHE.overrides = data.overrides;
+  if (data.extra) NZ_CLOUD_CACHE.extra = data.extra;
+  if (data.hidden) NZ_CLOUD_CACHE.hidden = data.hidden;
   if (data.prefs) nzSet(NZ_KEYS.PREFS, data.prefs);
-  if (data.overrides) nzSet(NZ_KEYS.OVERRIDES, data.overrides);
-  if (data.extra) nzSet(NZ_KEYS.EXTRA, data.extra);
-  if (data.hidden) nzSet(NZ_KEYS.HIDDEN, data.hidden);
+  return nzCloudPush();
 }
+
+/* تحميل أولي تلقائي فور ما ينحمّل هالملف، بحيث كل صفحة تقدر تستنى عليه */
+const NZ_READY = nzInit();

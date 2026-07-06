@@ -443,6 +443,10 @@ function tryAdminLogin(){
     document.getElementById('admin-pass-input').value = '';
     updateAdminLockUI();
     showToast('تم الدخول للوحة التحكم');
+    // تنظيف تلقائي بالخلفية لأي صور قديمة محفوظة كنص طويل بدل رابط (من قبل ما ضفنا استضافة الصور)
+    nzMigrateOldInlineImages().then(ok=>{
+      if(ok){ populateCatFilter(); renderAdminTable(); }
+    });
   } else {
     showToast('كلمة السر غلط ❌');
   }
@@ -578,13 +582,16 @@ async function handleNewImageUpload(event){
   try{
     showToast('جاري معالجة الصورة...');
     const dataUrl = await nzFileToDataURL(file);
-    pendingNewProductImage = dataUrl;
     const preview = document.getElementById('new-img-preview');
-    preview.src = dataUrl;
+    preview.src = dataUrl; // عرض فوري قبل الرفع
     preview.style.opacity = 1;
-    showToast('تم اختيار الصورة ✔');
+    showToast('جاري رفع الصورة لاستضافة الصور...');
+    const hostedUrl = await nzUploadImageToHost(dataUrl);
+    pendingNewProductImage = hostedUrl;
+    showToast('تم رفع الصورة ✔');
   }catch(err){
-    showToast('تعذر تحميل الصورة ❌');
+    console.error(err);
+    showToast('تعذر رفع الصورة ❌ — ' + (err.message || ''));
   }
 }
 
@@ -592,11 +599,13 @@ async function handleRowImageUpload(event, id){
   const file = event.target.files[0];
   if(!file) return;
   try{
-    showToast('جاري رفع الصورة...');
+    showToast('جاري معالجة ورفع الصورة...');
     const dataUrl = await nzFileToDataURL(file);
-    await updateProduct(id, 'img', dataUrl);
+    const hostedUrl = await nzUploadImageToHost(dataUrl);
+    await updateProduct(id, 'img', hostedUrl);
   }catch(err){
-    showToast('تعذر رفع الصورة ❌');
+    console.error(err);
+    showToast('تعذر رفع الصورة ❌ — ' + (err.message || ''));
   }
 }
 

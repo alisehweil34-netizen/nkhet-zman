@@ -21,6 +21,28 @@ const NZ_CLOUD = {
   BASE_URL: 'https://api.jsonbin.io/v3/b/'
 };
 
+/* ---------- إعداد استضافة الصور (imgbb) ----------
+   الصور ما بتنخزن كنص طويل جوا قاعدة البيانات (JSONBin عندها حد صارم 100 كيلوبايت
+   للتحديث بالخطة المجانية). بدل هيك، الصورة بترفع لخدمة استضافة صور مجانية، وبيرجعلنا
+   بس رابط قصير نخزنه بدل النص الطويل. */
+const NZ_IMGBB_API_KEY = 'c18da546bf999861c4cadcf77ecfc3a4';
+
+async function nzUploadImageToHost(dataUrl){
+  const base64 = dataUrl.split(',')[1] || dataUrl;
+  const form = new FormData();
+  form.append('image', base64);
+  const res = await fetch('https://api.imgbb.com/1/upload?key=' + NZ_IMGBB_API_KEY, {
+    method: 'POST',
+    body: form
+  });
+  const data = await res.json().catch(()=>null);
+  if(!res.ok || !data || !data.success){
+    console.error('imgbb upload failed', res.status, data);
+    throw new Error('فشل رفع الصورة لاستضافة الصور الخارجية');
+  }
+  return data.data.display_url || data.data.url;
+}
+
 const NZ_DEFAULT_SITE = {
   storeName: 'نكهة زمان',
   tagline: 'ألبان ومشتقات حليب بلدية',
@@ -122,9 +144,13 @@ async function nzCloudPush() {
     if (!res.ok) {
       const bodyText = await res.text().catch(()=> '');
       console.error('nzCloudPush failed:', res.status, res.statusText, bodyText);
-      window.NZ_LAST_ERROR = (res.status === 413)
-        ? 'حجم البيانات (خصوصًا الصور) تجاوز الحد المسموح بقاعدة البيانات. جرب صورة أصغر أو احذف بعض المنتجات القديمة.'
-        : 'فشل الحفظ بالسحابة (Status ' + res.status + ')';
+      if (res.status === 413) {
+        window.NZ_LAST_ERROR = 'حجم البيانات (خصوصًا الصور) تجاوز الحد المسموح بقاعدة البيانات. جرب صورة أصغر أو احذف بعض المنتجات القديمة.';
+      } else if (res.status === 403) {
+        window.NZ_LAST_ERROR = 'رصيد الطلبات المجاني بقاعدة البيانات خلص أو الوصول ممنوع مؤقتًا. لازم تشتري رصيد إضافي من حساب JSONBin أو تستنى شوي وتعيد المحاولة.';
+      } else {
+        window.NZ_LAST_ERROR = 'فشل الحفظ بالسحابة (Status ' + res.status + ')';
+      }
       throw new Error('فشل حفظ البيانات بالسحابة: ' + res.status);
     }
     nzSet(NZ_KEYS.CLOUD_CACHE, NZ_CLOUD_CACHE);
@@ -272,6 +298,35 @@ async function nzRestoreProduct(id) {
   return nzCloudPush();
 }
 
+async function nzMigrateOldInlineImages(){
+  if (!NZ_CLOUD_CACHE) await nzInit();
+  let changed = false;
+  const jobs = [];
+
+  Object.keys(NZ_CLOUD_CACHE.overrides || {}).forEach(id => {
+    const o = NZ_CLOUD_CACHE.overrides[id];
+    if (o && typeof o.img === 'string' && o.img.startsWith('data:image')) {
+      jobs.push(
+        nzUploadImageToHost(o.img).then(url => { o.img = url; changed = true; })
+          .catch(e => console.error('migrate override image failed for', id, e))
+      );
+    }
+  });
+
+  (NZ_CLOUD_CACHE.extra || []).forEach(p => {
+    if (p && typeof p.img === 'string' && p.img.startsWith('data:image')) {
+      jobs.push(
+        nzUploadImageToHost(p.img).then(url => { p.img = url; changed = true; })
+          .catch(e => console.error('migrate extra image failed for', p.id, e))
+      );
+    }
+  });
+
+  await Promise.all(jobs);
+  if (changed) return nzCloudPush();
+  return true;
+}
+
 async function nzResetAllProducts() {
   if (!NZ_CLOUD_CACHE) await nzInit();
   NZ_CLOUD_CACHE.overrides = {};
@@ -282,8 +337,8 @@ async function nzResetAllProducts() {
 
 /* ---------- رفع الصور من جهاز المستخدم ---------- */
 function nzFileToDataURL(file, maxDim, quality) {
-  maxDim = maxDim || 480;
-  quality = quality || 0.6;
+  maxDim = maxDim || 1000;
+  quality = quality || 0.8;
   return new Promise((resolve, reject) => {
     if (!file || !file.type.startsWith('image/')) {
       reject(new Error('الملف المختار مش صورة'));
@@ -306,11 +361,11 @@ function nzFileToDataURL(file, maxDim, quality) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // نقلّص الجودة تدريجيًا لحد ما نضمن حجم صغير يناسب حد قاعدة البيانات المجانية (1 ميجا بايت لكل القاعدة)
+        // تقليل تدريجي بسيط فقط لو الصورة كبيرة كتير (عشان سرعة الرفع)، بدون تضحية كبيرة بالجودة
         let q = quality;
         let dataUrl = canvas.toDataURL('image/jpeg', q);
-        const MAX_CHARS = 90000; // تقريبًا 65 كيلوبايت للصورة الواحدة
-        while (dataUrl.length > MAX_CHARS && q > 0.25) {
+        const MAX_CHARS = 1500000; // ~1.1 ميجابايت، هامش مريح جدًا (الرفع لخدمة صور خارجية مش لقاعدة بيانات محدودة)
+        while (dataUrl.length > MAX_CHARS && q > 0.3) {
           q -= 0.1;
           dataUrl = canvas.toDataURL('image/jpeg', q);
         }

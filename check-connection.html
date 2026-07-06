@@ -81,6 +81,43 @@ async function runTest(){
   }catch(e){
     addLine('err', '✘ فشل الاتصال بالكامل أثناء الكتابة (مشكلة شبكة/CORS): ' + e.message);
   }
+
+  addLine('info', 'جاري اختبار كتابة "صورة تجريبية" شبيهة بالصور الحقيقية (لمحاكاة نفس المشكلة بالضبط)...');
+  try{
+    let currentData = {};
+    try{
+      const cur = await fetch(BASE + BIN_ID + '/latest', { headers: { 'X-Master-Key': MASTER_KEY } });
+      if(cur.ok){ const curJson = await cur.json(); currentData = curJson.record || {}; }
+    }catch(e){}
+
+    // نص طويل عشوائي يشابه طول نص صورة base64 حقيقية (حوالي 60 كيلوبايت)
+    const fakeImageData = 'data:image/jpeg;base64,' + 'A'.repeat(60000);
+    const testPayloadWithImage = Object.assign({}, currentData, { _imageTest: fakeImageData });
+
+    const res3 = await fetch(BASE + BIN_ID, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': MASTER_KEY,
+        'X-Bin-Versioning': 'false'
+      },
+      body: JSON.stringify(testPayloadWithImage)
+    });
+    const bodyText3 = await res3.text();
+    if(res3.ok){
+      addLine('ok', '✔ نجحت كتابة الصورة التجريبية (Status ' + res3.status + ') — يعني المشكلة مش بحجم الصور.');
+      // تنظيف: نرجع نكتب البيانات الأصلية بدون حقل الاختبار
+      await fetch(BASE + BIN_ID, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY, 'X-Bin-Versioning': 'false' },
+        body: JSON.stringify(currentData)
+      });
+    } else {
+      addLine('err', '✘ فشلت كتابة الصورة التجريبية — Status: ' + res3.status + ' ' + res3.statusText + '\nرسالة السيرفر: ' + bodyText3.slice(0,800));
+    }
+  }catch(e){
+    addLine('err', '✘ فشل الاتصال بالكامل أثناء اختبار الصورة: ' + e.message);
+  }
 }
 </script>
 </body>

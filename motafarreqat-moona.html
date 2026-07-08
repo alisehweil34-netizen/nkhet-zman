@@ -722,6 +722,10 @@
   <p class="count" id="nz-cat-count"></p>
 </section>
 
+<div class="cat-banner" id="nz-cat-banner" style="display:none;">
+  <img id="nz-cat-banner-img" src="" alt="">
+</div>
+
 <section class="menu-section" id="menu">
   <div id="nz-cat-content">
     <p style="text-align:center;color:#8a6d3b;">جاري تحميل المنتجات...</p>
@@ -774,6 +778,9 @@
     return "متفرقات ومؤونة";
   }
 
+  // صورة ثابتة مخصصة لهاد النوع (إذا موجودة)؛ إذا فضيت، منستخدم صورة أول منتج تلقائيًا
+  const NZ_FIXED_COVER = "cat-misc.jpeg";
+
   function renderCategoryPage(){
     const requestedCat = getCategoryFromUrl();
     const products = nzGetProducts().filter(p => !p.hidden);
@@ -793,10 +800,23 @@
     if(!requestedCat || items.length === 0){
       countEl.textContent = '';
       contentEl.innerHTML = '<p style="text-align:center;color:#8a6d3b;">ما لقينا منتجات لهاد التصنيف حاليًا.</p>';
+      document.getElementById('nz-cat-banner').style.display = 'none';
       return;
     }
 
     countEl.textContent = items.length + ' صنف متوفر';
+
+    // بانر الصورة: صورة ثابتة مخصصة إذا موجودة، وإلا صورة أول منتج بهاد النوع
+    const bannerSrc = NZ_FIXED_COVER || (items.find(p => p.img) || {}).img;
+    const bannerEl = document.getElementById('nz-cat-banner');
+    const bannerImgEl = document.getElementById('nz-cat-banner-img');
+    if(bannerSrc){
+      bannerImgEl.src = bannerSrc;
+      bannerImgEl.alt = requestedCat;
+      bannerEl.style.display = '';
+    } else {
+      bannerEl.style.display = 'none';
+    }
 
     const cards = items.map(p => `
       <article class="card">

@@ -761,6 +761,43 @@
     return "الألبان والأجبان";
   }
 
+  function renderCategoryPage(){
+    const requestedCat = getCategoryFromUrl();
+    const products = nzGetProducts().filter(p => !p.hidden);
+
+    const items = products.filter(p => {
+      const key = String(p.categoryName || p.category || 'أخرى').trim();
+      return key === requestedCat;
+    });
+
+    document.title = 'نكهة زمان | ' + (requestedCat || 'تصنيف المنتجات');
+    document.getElementById('nz-cat-name').textContent = requestedCat || 'تصنيف غير معروف';
+    document.getElementById('nz-cat-title').textContent = requestedCat || 'تصنيف غير معروف';
+
+    const contentEl = document.getElementById('nz-cat-content');
+    const countEl = document.getElementById('nz-cat-count');
+
+    if(!requestedCat || items.length === 0){
+      countEl.textContent = '';
+      contentEl.innerHTML = '<p style="text-align:center;color:#8a6d3b;">ما لقينا منتجات لهاد التصنيف حاليًا.</p>';
+      return;
+    }
+
+    countEl.textContent = items.length + ' صنف متوفر';
+
+    const cards = items.map(p => `
+      <article class="card">
+        <div class="card-img">
+          <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.alt||p.name)}" loading="lazy">
+          <div class="price-seal"><b>${escapeHtml(p.price)}</b><small>${escapeHtml(p.unit||'د.أ/كغ')}</small></div>
+        </div>
+        <div class="card-body"><h4>${escapeHtml(p.name)}</h4></div>
+      </article>
+    `).join('');
+
+    contentEl.innerHTML = `<div class="grid">${cards}</div>`;
+  }
+
   NZ_READY.then(() => {
     nzApplySiteSettings(document);
     nzApplyPrefs(document);

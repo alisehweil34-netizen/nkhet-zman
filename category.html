@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نكهة زمان | ألبان ومشتقات حليب بلدية</title>
+<title>نكهة زمان | تصنيف المنتجات</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Markazi+Text:wght@500;600;700&family=Cairo:wght@300;400;500;600;700;800&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -639,6 +639,46 @@
   }
   .settings-link:hover{background:var(--olive-dark); color:var(--milk);}
   .nav-wrap{gap:16px;}
+
+  /* ---------- عناصر خاصة بصفحة تصنيف واحد ---------- */
+  .cat-page-head{
+    max-width:1180px;
+    margin:0 auto;
+    padding:50px 28px 10px;
+  }
+  .breadcrumb{
+    font-family:'Markazi Text', serif;
+    font-size:1.05rem;
+    color:var(--brass);
+    margin-bottom:18px;
+  }
+  .breadcrumb a{text-decoration:none; color:var(--olive-dark); font-weight:600;}
+  .breadcrumb a:hover{color:var(--burgundy);}
+  .cat-page-head h1{
+    font-size:2.6rem;
+    margin:6px 0 10px;
+  }
+  .cat-page-head .count{
+    color:#5c574b;
+    font-size:1.02rem;
+  }
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin-top:22px;
+    text-decoration:none;
+    color:var(--olive-dark);
+    font-weight:700;
+    border:2px solid var(--olive-dark);
+    border-radius:100px;
+    padding:12px 24px;
+    transition:all .25s ease;
+  }
+  .back-link:hover{background:var(--olive-dark); color:var(--milk);}
+  body.nz-dark .back-link{border-color:#e9e6da; color:#e9e6da;}
+  body.nz-dark .back-link:hover{background:#e9e6da; color:#1b1d16;}
+  body.nz-dark .breadcrumb a{color:#e9e6da;}
 </style>
 </head>
 <body>
@@ -654,81 +694,30 @@
     </div>
     <nav>
       <ul>
-        <li><a href="#about">قصتنا</a></li>
-        <li><a href="#menu">القائمة</a></li>
-        <li><a href="#contact">تواصل معنا</a></li>
+        <li><a href="index.html#about">قصتنا</a></li>
+        <li><a href="index.html#menu">القائمة</a></li>
+        <li><a href="index.html#contact">تواصل معنا</a></li>
       </ul>
     </nav>
     <a href="settings.html" class="settings-link" title="الإعدادات" aria-label="الإعدادات">⚙</a>
   </div>
 </header>
 
-<section class="hero">
-  <div class="hero-copy">
-    <span class="eyebrow" data-nz="heroEyebrow">دكان بلدي، طعم أصيل</span>
-    <h1 data-nz="heroTitle">ألبان بلدية <em>بنكهة</em><br>ما بتنسى</h1>
-    <p data-nz="heroText">من قلب المزرعة إلى طاولتك؛ أجبان طازجة، لبنة بلدية، سمنة وزبدة على الطريقة القديمة. كل قطعة عنّا محضّرة يوميًا بوصفات ما تغيرت من زمان.</p>
-    <div class="hero-ctas">
-      <a href="#menu" class="btn btn-primary">شوف القائمة</a>
-      <a href="#contact" class="btn btn-ghost">اطلب الآن</a>
-    </div>
-  </div>
-  <div class="hero-visual">
-    <div class="hero-seal">
-      <img data-nz="logo" src="logo.jpeg" alt="نكهة زمان - ألبان ومشتقات حليب بلدية">
-    </div>
-    <div class="hero-badge">منتج<br>بلدي<br>100%</div>
-  </div>
-</section>
-
-<div class="strip">
-  <div class="strip-track">
-    <span>أجبان طازجة يوميًا</span>
-    <span>لبنة بلدية أصيلة</span>
-    <span>سمنة وزبدة بلدية</span>
-    <span>بدون مواد حافظة</span>
-    <span>توصيل لجميع المناطق</span>
-    <span>أجبان طازجة يوميًا</span>
-    <span>لبنة بلدية أصيلة</span>
-    <span>سمنة وزبدة بلدية</span>
-    <span>بدون مواد حافظة</span>
-    <span>توصيل لجميع المناطق</span>
-  </div>
-</div>
-
-<section class="about" id="about">
-  <div class="about-gallery">
-    <img class="tall" src="prod_065.jpg" alt="جبنة عكاوي بلدية">
-    <div><img src="prod_061.jpg" alt="جبنة قشقوان"></div>
-    <div><img src="prod_066.jpg" alt="لبنة جامدة بالزيت"></div>
-  </div>
-  <div class="about-copy">
-    <span class="eyebrow">قصتنا</span>
-    <h2>نكهة ما بتتكرر</h2>
-    <p>بدأت "نكهة زمان" من فكرة بسيطة: إرجاع طعم الألبان البلدية الأصيل يلي كنا ناكلوه بأيام زمان. نشتغل يوميًا على تحضير الأجبان واللبنة والسمنة بأسلوب تقليدي، من غير مواد حافظة، وبمكونات طازجة 100%.</p>
-    <p>كل منتج عنّا إلو قصة ونكهة مميزة، من الجبنة النابلسي واللبنة البلدية، للسمنة والزبدة المحضّرة على الطريقة القديمة.</p>
-    <div class="stats">
-      <div class="stat"><b>+150</b><span>صنف ومنتج متوفر</span></div>
-      <div class="stat"><b>يومي</b><span>تحضير طازج</span></div>
-      <div class="stat"><b>100%</b><span>مكونات بلدية</span></div>
-    </div>
-  </div>
+<section class="cat-page-head">
+  <div class="breadcrumb"><a href="index.html#menu">القائمة</a> ‹ <span id="nz-cat-name">...</span></div>
+  <h1 id="nz-cat-title">...</h1>
+  <p class="count" id="nz-cat-count"></p>
 </section>
 
 <section class="menu-section" id="menu">
-  <div class="menu-head">
-    <span class="eyebrow">قائمتنا</span>
-    <h2>تشكيلة منتجاتنا الكاملة</h2>
-    <p>الأسعار بالدينار الأردني للكيلو غرام الواحد وتختلف حسب الكمية المطلوبة، ما عدا المنتجات المعبأة يتم تحديد سعرها عند الطلب.</p>
-  </div>
-
-  <div id="nz-menu-content">
+  <div id="nz-cat-content">
     <p style="text-align:center;color:#8a6d3b;">جاري تحميل المنتجات...</p>
   </div>
-
+  <div style="text-align:center;">
+    <a href="index.html#menu" class="back-link">↩ رجوع لكل التصنيفات</a>
+  </div>
 </section>
 
-  
 <section class="cta-band" id="contact">
   <h2>جاهزين لطلبك</h2>
   <p>تواصل معنا عبر الهاتف أو واتساب وخلي طلبك يوصلك طازج لباب البيت.</p>
@@ -744,9 +733,9 @@
     <div>
       <h5>روابط سريعة</h5>
       <ul>
-        <li><a href="#about">قصتنا</a></li>
-        <li><a href="#menu">القائمة</a></li>
-        <li><a href="#contact">تواصل معنا</a></li>
+        <li><a href="index.html#about">قصتنا</a></li>
+        <li><a href="index.html#menu">القائمة</a></li>
+        <li><a href="index.html#contact">تواصل معنا</a></li>
       </ul>
     </div>
     <div>
@@ -768,80 +757,64 @@
     return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
-  function renderMenu(){
-    const products = nzGetProducts().filter(p => !p.hidden);
-
-    // تجميع حسب اسم التصنيف الظاهر (وليس المعرّف الداخلي)، حتى لو المنتجات
-    // الأساسية والمضافة عندها معرّفات داخلية مختلفة لنفس التصنيف
-    const catsOrder = [];
-    const catsMap = {};
-    products.forEach(p => {
-      const key = String(p.categoryName || p.category || 'أخرى').trim();
-      if(!catsMap[key]){
-        catsMap[key] = { name: key, items: [] };
-        catsOrder.push(key);
-      }
-      catsMap[key].items.push(p);
-    });
-
-    // كل نوع إله صفحة/ملف HTML خاص فيه؛ أي نوع إضافي مستقبلي بياخد صفحة عامة تلقائيًا
-    const NZ_CATEGORY_PAGES = {
-      'الألبان والأجبان': 'alban-ajban.html',
-      'اللحوم والمقرمشات': 'lahom-moqarmashat.html'
-    };
-    function nzCategoryPageUrl(catName){
-      const trimmed = String(catName).trim();
-      if(NZ_CATEGORY_PAGES[trimmed]) return NZ_CATEGORY_PAGES[trimmed];
-      return 'category.html?c=' + encodeURIComponent(trimmed);
-    }
-
-    // بلاطة (tile) لكل تصنيف بتودّي لصفحته الخاصة
-    const contentEl = document.getElementById('nz-menu-content');
-    if(catsOrder.length === 0){
-      contentEl.innerHTML = '<p style="text-align:center;color:#8a6d3b;">ما في منتجات لعرضها حاليًا.</p>';
-      return;
-    }
-    contentEl.innerHTML = '<div class="cat-grid">' + catsOrder.map((catName) => {
-      const cat = catsMap[catName];
-      const coverItem = cat.items.find(p => p.img) || cat.items[0];
-      const coverImg = coverItem && coverItem.img
-        ? `<img src="${escapeHtml(coverItem.img)}" alt="${escapeHtml(catName)}" loading="lazy">`
-        : `<div class="no-photo"><span>ن.ز</span></div>`;
-      return `
-        <a class="cat-tile" href="${escapeHtml(nzCategoryPageUrl(catName))}">
-          <div class="cat-tile-img">${coverImg}</div>
-          <div class="cat-tile-body">
-            <h3>${escapeHtml(cat.name)}</h3>
-            <span>${cat.items.length} صنف</span>
-          </div>
-        </a>
-      `;
-    }).join('') + '</div>';
+  function getCategoryFromUrl(){
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('c') || '').trim();
   }
 
-  /* ننتظر تحميل بيانات المتجر من السحابة قبل أي عرض */
+  function renderCategoryPage(){
+    const requestedCat = getCategoryFromUrl();
+    const products = nzGetProducts().filter(p => !p.hidden);
+
+    const items = products.filter(p => {
+      const key = String(p.categoryName || p.category || 'أخرى').trim();
+      return key === requestedCat;
+    });
+
+    document.title = 'نكهة زمان | ' + (requestedCat || 'تصنيف المنتجات');
+    document.getElementById('nz-cat-name').textContent = requestedCat || 'تصنيف غير معروف';
+    document.getElementById('nz-cat-title').textContent = requestedCat || 'تصنيف غير معروف';
+
+    const contentEl = document.getElementById('nz-cat-content');
+    const countEl = document.getElementById('nz-cat-count');
+
+    if(!requestedCat || items.length === 0){
+      countEl.textContent = '';
+      contentEl.innerHTML = '<p style="text-align:center;color:#8a6d3b;">ما لقينا منتجات لهاد التصنيف حاليًا.</p>';
+      return;
+    }
+
+    countEl.textContent = items.length + ' صنف متوفر';
+
+    const cards = items.map(p => `
+      <article class="card">
+        <div class="card-img">
+          <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.alt||p.name)}" loading="lazy">
+          <div class="price-seal"><b>${escapeHtml(p.price)}</b><small>${escapeHtml(p.unit||'د.أ/كغ')}</small></div>
+        </div>
+        <div class="card-body"><h4>${escapeHtml(p.name)}</h4></div>
+      </article>
+    `).join('');
+
+    contentEl.innerHTML = `<div class="grid">${cards}</div>`;
+  }
+
   NZ_READY.then(() => {
     nzApplySiteSettings(document);
     nzApplyPrefs(document);
-    renderMenu();
+    renderCategoryPage();
   }).catch((err) => {
     console.error('cloud init failed unexpectedly', err);
-    renderMenu();
+    renderCategoryPage();
   });
 
-  // إعادة تطبيق التفضيلات إذا اتغيرت من تبويب/صفحة ثانية بنفس المتصفح (مثلاً صفحة الإعدادات مفتوحة بتبويب جنب)
   window.addEventListener('storage', (e) => {
     if(e.key && e.key.startsWith('nz_')){
       nzApplySiteSettings(document);
       nzApplyPrefs(document);
-      renderMenu();
+      renderCategoryPage();
     }
   });
-
-  // ملاحظة: شلنا التحديث الدوري التلقائي (كل 30 ثانية) لأنه كان يستهلك رصيد الطلبات
-  // المجاني بقاعدة البيانات بسرعة كبيرة (الخطة المجانية عندها عدد طلبات محدود *لمرة وحدة*
-  // مش شهري). هلق كل ما زائر يفتح/يحدّث الصفحة، بيجيب آخر نسخة من المنتجات — وهذا كافي
-  // لموقع صغير، وبيوفر رصيد الطلبات لفترة أطول بكثير.
 </script>
 
 </body>

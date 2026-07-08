@@ -792,6 +792,12 @@
       'المخللات والزيتون': 'mokhallalat-zeytoon.html',
       'متفرقات ومؤونة': 'motafarreqat-moona.html'
     };
+    // صورة ثابتة مختارة لكل نوع (بدل ما ناخد أول صورة منتج بشكل عشوائي)
+    const NZ_CATEGORY_COVER_IMAGES = {
+      'اللحوم والمقرمشات': 'cat-meat.jpeg',
+      'المخللات والزيتون': 'cat-pickles.jpeg',
+      'متفرقات ومؤونة': 'cat-misc.jpeg'
+    };
     function nzCategoryPageUrl(catName){
       const trimmed = String(catName).trim();
       if(NZ_CATEGORY_PAGES[trimmed]) return NZ_CATEGORY_PAGES[trimmed];
@@ -806,9 +812,11 @@
     }
     contentEl.innerHTML = '<div class="cat-grid">' + catsOrder.map((catName) => {
       const cat = catsMap[catName];
+      const fixedCover = NZ_CATEGORY_COVER_IMAGES[String(catName).trim()];
       const coverItem = cat.items.find(p => p.img) || cat.items[0];
-      const coverImg = coverItem && coverItem.img
-        ? `<img src="${escapeHtml(coverItem.img)}" alt="${escapeHtml(catName)}" loading="lazy">`
+      const coverSrc = fixedCover || (coverItem && coverItem.img);
+      const coverImg = coverSrc
+        ? `<img src="${escapeHtml(coverSrc)}" alt="${escapeHtml(catName)}" loading="lazy">`
         : `<div class="no-photo"><span>ن.ز</span></div>`;
       return `
         <a class="cat-tile" href="${escapeHtml(nzCategoryPageUrl(catName))}">
